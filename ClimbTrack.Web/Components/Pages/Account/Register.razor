@@ -24,13 +24,19 @@
         </div>
         <div class="mb-3">
             <label class="form-label" for="reg-password">Password</label>
-            <InputText id="reg-password" type="password" class="form-control" @bind-Value="Input.Password" autocomplete="new-password" />
+            <div class="input-group">
+                <InputText id="reg-password" type="password" class="form-control" @bind-Value="Input.Password" autocomplete="new-password" />
+                <button type="button" class="btn btn-outline-secondary" data-toggle-password="reg-password" aria-label="Show password" aria-pressed="false">Show</button>
+            </div>
             <div class="form-text">At least 8 characters with upper and lower case letters, a digit and a symbol.</div>
             <ValidationMessage For="() => Input.Password" />
         </div>
         <div class="mb-3">
             <label class="form-label" for="reg-confirm">Confirm password</label>
-            <InputText id="reg-confirm" type="password" class="form-control" @bind-Value="Input.ConfirmPassword" autocomplete="new-password" />
+            <div class="input-group">
+                <InputText id="reg-confirm" type="password" class="form-control" @bind-Value="Input.ConfirmPassword" autocomplete="new-password" />
+                <button type="button" class="btn btn-outline-secondary" data-toggle-password="reg-confirm" aria-label="Show password" aria-pressed="false">Show</button>
+            </div>
             <ValidationMessage For="() => Input.ConfirmPassword" />
         </div>
         <button type="submit" class="btn btn-primary w-100">Register</button>
