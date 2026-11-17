@@ -4,7 +4,7 @@ Responsive web application for indoor bouldering enthusiasts: discover routes, l
 
 Built with **Blazor Web App (Interactive Server) - C# - .NET 10 - EF Core + SQLite - ASP.NET Core Identity - Bootstrap 5 - xUnit + bUnit**.
 
-Author: Taimas Torekhan (solo project, AITU - Functional Programming final project).
+## Author: Taimas Torekhan (solo project, AITU - Functional Programming final project).
 
 ## Features
 
@@ -20,7 +20,7 @@ Author: Taimas Torekhan (solo project, AITU - Functional Programming final proje
 
 ## Quick start
 
-Requirements: [.NET 10 SDK](https://dotnet.microsoft.com/download). Works on Windows, macOS and Linux.
+Requirements: [.NET 10 SDK]. Works on Windows, macOS and Linux.
 
 ```bash
 dotnet restore
@@ -48,6 +48,9 @@ dotnet test --collect:"XPlat Code Coverage"   # measure coverage
 - Service tests (SQLite in-memory): CRUD, validation, ownership, paging, filters
 - Component tests (bUnit): GradeBadge, RouteCard, Pager, GradeChart, StatCard
 - Integration tests (`WebApplicationFactory`): API, public page, auth protection, health
+
+![Test sum: 44, success 44](image.png)
+Test summary: overall 44, success 44, fail 0.
 
 ## Architecture (summary)
 

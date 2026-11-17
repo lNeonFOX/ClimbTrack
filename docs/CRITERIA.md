@@ -21,4 +21,4 @@
 | 17 | Innovation | Personalised, deterministic recommendation engine; grade-distribution chart without JS libraries |
 | 18 | Creative .NET use | LINQ, primary constructors, `TimeProvider`, `IDbContextFactory`, `EF.Functions.Like`, `ExecuteDelete`, static SSR + interactive mix |
 | 19 | Professionalism | CI workflow, `.gitignore`, consistent naming, security notes |
-| 20 | Presentation | `docs/PRESENTATION.md` outline and demo script |
+| 20 | Presentation | done |
