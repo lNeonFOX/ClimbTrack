@@ -99,5 +99,4 @@ Password hashing and lockout via Identity; antiforgery on all forms and on sign-
 
 - [Architecture and ERD](docs/ARCHITECTURE.md)
 - [QA checklist](docs/QA_CHECKLIST.md)
-- [Presentation outline and demo script](docs/PRESENTATION.md)
 - [Criteria coverage](docs/CRITERIA.md)
