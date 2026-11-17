@@ -20,7 +20,8 @@
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
 
-    // Account pages post forms and set cookies, so they must be static SSR. Everything else is interactive.
+    // Pages marked [ExcludeFromInteractiveRouting] (Account pages) post forms and set cookies, so they must be
+    // static SSR - even when reached by client-side navigation from an interactive page. Everything else is interactive.
     private IComponentRenderMode? PageRenderMode =>
-        HttpContext.Request.Path.StartsWithSegments("/Account") ? null : InteractiveServer;
+        HttpContext.AcceptsInteractiveRouting() ? InteractiveServer : null;
 }

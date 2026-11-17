@@ -4,14 +4,18 @@
 <NavMenu />
 
 <main id="main-content" class="container py-4">
-    <ErrorBoundary @ref="_boundary">
-        <ChildContent>@Body</ChildContent>
-        <ErrorContent>
-            <div class="alert alert-danger" role="alert">
-                Something went wrong while showing this page. Please reload or go back to the <a href="/">home page</a>.
-            </div>
-        </ErrorContent>
-    </ErrorBoundary>
+<ErrorBoundary @ref="_boundary">
+    <ChildContent>@Body</ChildContent>
+    <ErrorContent Context="ex">
+        <div class="alert alert-danger" role="alert">
+            Something went wrong while showing this page. Please reload or go back to the <a href="/">home page</a>.
+            @if (Env.EnvironmentName == "Development")
+            {
+                <pre class="mb-0 mt-2 small">@ex.GetType().FullName: @ex.Message</pre>
+            }
+        </div>
+    </ErrorContent>
+</ErrorBoundary>
 </main>
 
 <footer class="app-footer">
