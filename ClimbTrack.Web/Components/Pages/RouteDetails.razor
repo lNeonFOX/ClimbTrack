@@ -1,0 +1,96 @@
+@page "/routes/{Id:int}"
+@inject RouteService RouteSvc
+@inject ClimbService Climbs
+@inject ICurrentUserService CurrentUser
+@inject ILogger<RouteDetails> Logger
+
+@if (_loading)
+{
+    <div class="text-center py-5" role="status">Loading...</div>
+}
+else if (_error is not null)
+{
+    <div class="alert alert-danger" role="alert">@_error</div>
+}
+else if (_route is null)
+{
+    <PageTitle>Route not found - ClimbTrack</PageTitle>
+    <div class="alert alert-warning" role="alert">Route not found. <a href="routes">Back to the catalog</a></div>
+}
+else
+{
+    <PageTitle>@_route.Name - ClimbTrack</PageTitle>
+    <p><a href="routes">&larr; All routes</a></p>
+    <div class="d-flex flex-wrap align-items-center gap-3 mb-2">
+        <h1 class="mb-0">@_route.Name</h1>
+        <GradeBadge Grade="_route.Grade" />
+    </div>
+    <p class="text-muted">@_route.WallType wall</p>
+    <p>@_route.Description</p>
+
+    @if (_userId is null)
+    {
+        <p><a href="Account/Login?returnUrl=routes/@_route.Id">Sign in</a> to log your attempts on this route.</p>
+    }
+    else
+    {
+        <a class="btn btn-primary mb-4" href="journal?routeId=@_route.Id">Log a climb</a>
+
+        <h2 class="h5">Your history on this route</h2>
+        @if (_history.Count == 0)
+        {
+            <p class="text-muted">You have not logged this route yet.</p>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead><tr><th>Date</th><th>Attempts</th><th>Result</th></tr></thead>
+                    <tbody>
+                        @foreach (var h in _history)
+                        {
+                            <tr @key="h.Id">
+                                <td>@h.Date.ToString("yyyy-MM-dd")</td>
+                                <td>@h.Attempts</td>
+                                <td>@(h.IsCompleted ? "Sent" : "Project")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    }
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private ClimbingRoute? _route;
+    private IReadOnlyList<ClimbListItem> _history = [];
+    private string? _userId;
+    private bool _loading = true;
+    private string? _error;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _loading = true;
+        _error = null;
+        try
+        {
+            _route = await RouteSvc.GetAsync(Id);
+            _userId = await CurrentUser.GetUserIdAsync();
+            _history = _route is not null && _userId is not null
+                ? await Climbs.GetForRouteAsync(_userId, Id)
+                : [];
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Route {RouteId} failed to load", Id);
+            _error = "This route could not be loaded. Please try again.";
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+}

@@ -1,0 +1,118 @@
+@page "/routes"
+@implements IDisposable
+@inject RouteService RouteSvc
+@inject RouteFilterState Filter
+@inject ILogger<RoutesCatalog> Logger
+
+<PageTitle>Route catalog - ClimbTrack</PageTitle>
+<h1>Route catalog</h1>
+
+<section class="card card-body mb-4" aria-label="Filters">
+    <div class="row g-3 align-items-end">
+        <div class="col-12 col-md-4">
+            <label class="form-label" for="f-search">Search by name</label>
+            <input id="f-search" class="form-control" value="@Filter.Search" @oninput="OnSearch" placeholder="e.g. Slab" />
+        </div>
+        <div class="col-6 col-md-3">
+            <label class="form-label" for="f-grade">Grade</label>
+            <select id="f-grade" class="form-select" value="@(Filter.Grade?.ToString() ?? "")" @onchange="OnGrade">
+                <option value="">All grades</option>
+                @for (var g = Grades.Min; g <= Grades.Max; g++)
+                {
+                    <option value="@g">@Grades.Label(g)</option>
+                }
+            </select>
+        </div>
+        <div class="col-6 col-md-3">
+            <label class="form-label" for="f-wall">Wall type</label>
+            <select id="f-wall" class="form-select" value="@(Filter.Wall?.ToString() ?? "")" @onchange="OnWall">
+                <option value="">All walls</option>
+                @foreach (var w in Enum.GetValues<WallType>())
+                {
+                    <option value="@w">@w</option>
+                }
+            </select>
+        </div>
+        <div class="col-12 col-md-2">
+            <button type="button" class="btn btn-outline-secondary w-100" @onclick="Filter.Reset">Reset</button>
+        </div>
+    </div>
+</section>
+
+@if (_loading)
+{
+    <div class="text-center py-5" role="status">Loading routes...</div>
+}
+else if (_error is not null)
+{
+    <div class="alert alert-danger" role="alert">@_error</div>
+}
+else if (_result is null || _result.Items.Count == 0)
+{
+    <div class="alert alert-info" role="status">No routes match your filters.</div>
+}
+else
+{
+    <p class="text-muted" aria-live="polite">@_result.TotalCount routes found</p>
+    <div class="row g-3">
+        @foreach (var r in _result.Items)
+        {
+            <div class="col-12 col-sm-6 col-lg-4" @key="r.Id">
+                <RouteCard Route="r" ShowActions="_isAuthenticated" />
+            </div>
+        }
+    </div>
+    <div class="mt-4"><Pager Page="_result.Page" TotalPages="_result.TotalPages" PageChanged="Filter.SetPage" /></div>
+}
+
+@code {
+    [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
+
+    private PagedResult<ClimbingRoute>? _result;
+    private bool _loading = true;
+    private bool _isAuthenticated;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Filter.Changed += OnFilterChanged;
+        if (AuthState is not null)
+            _isAuthenticated = (await AuthState).User.Identity?.IsAuthenticated == true;
+        await LoadAsync();
+    }
+
+    private void OnSearch(ChangeEventArgs e) => Filter.SetSearch(e.Value?.ToString());
+
+    private void OnGrade(ChangeEventArgs e) =>
+        Filter.SetGrade(int.TryParse(e.Value?.ToString(), out var g) ? g : null);
+
+    private void OnWall(ChangeEventArgs e) =>
+        Filter.SetWall(Enum.TryParse<WallType>(e.Value?.ToString(), out var w) ? w : null);
+
+    // The filter state can change from any component; re-query and re-render on the circuit's sync context.
+    private void OnFilterChanged() => _ = InvokeAsync(async () =>
+    {
+        await LoadAsync();
+        StateHasChanged();
+    });
+
+    private async Task LoadAsync()
+    {
+        _error = null;
+        try
+        {
+            _result = await RouteSvc.SearchAsync(Filter.ToQuery());
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Route catalog failed to load");
+            _error = "Routes could not be loaded. Please try again.";
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    public void Dispose() => Filter.Changed -= OnFilterChanged;
+}

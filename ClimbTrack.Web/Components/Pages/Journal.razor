@@ -1,0 +1,223 @@
+@page "/journal"
+@attribute [Authorize]
+@inject ClimbService Climbs
+@inject RouteService RouteSvc
+@inject ICurrentUserService CurrentUser
+@inject TimeProvider Time
+@inject ILogger<Journal> Logger
+
+<PageTitle>Journal - ClimbTrack</PageTitle>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h1 class="mb-0">Climbing journal</h1>
+    @if (_form is null)
+    {
+        <button type="button" class="btn btn-primary" @onclick="() => StartAdd(0)">Add climb</button>
+    }
+</div>
+
+@if (_message is not null)
+{
+    <div class="alert alert-success" role="status">@_message</div>
+}
+@if (_error is not null)
+{
+    <div class="alert alert-danger" role="alert">@_error</div>
+}
+
+@if (_form is not null)
+{
+    <div class="card card-body mb-4">
+        <h2 class="h5">@(_editId is null ? "New climb" : "Edit climb")</h2>
+        <ClimbForm Model="_form" Routes="_routes" Busy="_busy"
+                   SubmitText="@(_editId is null ? "Save climb" : "Update climb")"
+                   OnSubmit="SaveAsync" OnCancel="CancelForm" />
+    </div>
+}
+
+@if (_loading)
+{
+    <div class="text-center py-5" role="status">Loading journal...</div>
+}
+else if (_page is null || _page.Items.Count == 0)
+{
+    <div class="alert alert-info">No climbs yet. Record your first attempt with "Add climb".</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead><tr><th>Date</th><th>Route</th><th>Attempts</th><th>Result</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var c in _page.Items)
+                {
+                    <tr @key="c.Id">
+                        <td>@c.Date.ToString("yyyy-MM-dd")</td>
+                        <td>
+                            <a href="routes/@c.RouteId">@c.RouteName</a> <GradeBadge Grade="c.Grade" />
+                            @if (!string.IsNullOrWhiteSpace(c.Notes))
+                            {
+                                <div class="small text-muted">@c.Notes</div>
+                            }
+                        </td>
+                        <td>@c.Attempts</td>
+                        <td>
+                            @if (c.IsCompleted) { <span class="badge text-bg-success">Sent</span> }
+                            else { <span class="badge text-bg-secondary">Project</span> }
+                        </td>
+                        <td class="text-end text-nowrap">
+                            @if (_confirmDeleteId == c.Id)
+                            {
+                                <span class="me-2">Delete?</span>
+                                <button type="button" class="btn btn-sm btn-danger" @onclick="() => DeleteAsync(c.Id)">Yes</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="() => _confirmDeleteId = null">No</button>
+                            }
+                            else
+                            {
+                                <button type="button" class="btn btn-sm btn-outline-primary" @onclick="() => StartEdit(c)">Edit</button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => _confirmDeleteId = c.Id">Delete</button>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <Pager Page="_page.Page" TotalPages="_page.TotalPages" PageChanged="GoToPage" />
+}
+
+@code {
+    [SupplyParameterFromQuery(Name = "routeId")] public int? RouteId { get; set; }
+
+    private string? _userId;
+    private IReadOnlyList<ClimbingRoute> _routes = [];
+    private PagedResult<ClimbListItem>? _page;
+    private int _pageNo = 1;
+    private ClimbInput? _form;
+    private int? _editId;
+    private int? _confirmDeleteId;
+    private string? _message;
+    private string? _error;
+    private bool _loading = true;
+    private bool _busy;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _userId = await CurrentUser.GetUserIdAsync();
+            _routes = await RouteSvc.GetAllAsync();
+            await LoadAsync();
+            if (RouteId is > 0) StartAdd(RouteId.Value);   // arriving from "Log climb"
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Journal failed to load");
+            _error = "Your journal could not be loaded. Please try again.";
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task LoadAsync()
+    {
+        if (_userId is null) return;
+        _page = await Climbs.GetPageAsync(_userId, _pageNo, 10);
+
+        // If the last item of a page was deleted, step back one page.
+        if (_page.Items.Count == 0 && _pageNo > 1)
+        {
+            _pageNo--;
+            _page = await Climbs.GetPageAsync(_userId, _pageNo, 10);
+        }
+    }
+
+    private async Task GoToPage(int page)
+    {
+        _pageNo = page;
+        await LoadAsync();
+    }
+
+    private void StartAdd(int routeId)
+    {
+        _editId = null;
+        _message = null;
+        _error = null;
+        _form = new ClimbInput { RouteId = routeId, Date = DateOnly.FromDateTime(Time.GetLocalNow().DateTime) };
+    }
+
+    private void StartEdit(ClimbListItem item)
+    {
+        _editId = item.Id;
+        _message = null;
+        _error = null;
+        _form = new ClimbInput
+        {
+            RouteId = item.RouteId,
+            Date = item.Date,
+            Attempts = item.Attempts,
+            IsCompleted = item.IsCompleted,
+            Notes = item.Notes
+        };
+    }
+
+    private void CancelForm()
+    {
+        _form = null;
+        _editId = null;
+        _error = null;
+    }
+
+    private async Task SaveAsync(ClimbInput input)
+    {
+        if (_userId is null) return;
+        _busy = true;
+        _error = null;
+        try
+        {
+            var result = _editId is null
+                ? await Climbs.AddAsync(_userId, input)
+                : await Climbs.UpdateAsync(_userId, _editId.Value, input);
+
+            if (result.Success)
+            {
+                _message = _editId is null ? "Climb saved." : "Climb updated.";
+                _form = null;
+                _editId = null;
+                await LoadAsync();
+            }
+            else
+            {
+                _error = result.Error;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Saving climb failed");
+            _error = "Something went wrong while saving. Please try again.";
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task DeleteAsync(int id)
+    {
+        if (_userId is null) return;
+        _confirmDeleteId = null;
+        try
+        {
+            var result = await Climbs.DeleteAsync(_userId, id);
+            if (result.Success) { _message = "Climb deleted."; _error = null; await LoadAsync(); }
+            else _error = result.Error;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Deleting climb {ClimbId} failed", id);
+            _error = "Something went wrong while deleting. Please try again.";
+        }
+    }
+}

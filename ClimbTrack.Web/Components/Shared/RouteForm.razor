@@ -1,0 +1,49 @@
+<EditForm Model="Model" OnValidSubmit="() => OnSubmit.InvokeAsync(Model)">
+    <DataAnnotationsValidator />
+    <ValidationSummary class="text-danger" />
+
+    <div class="row g-3">
+        <div class="col-12 col-md-6">
+            <label class="form-label" for="rf-name">Name</label>
+            <InputText id="rf-name" class="form-control" @bind-Value="Model.Name" />
+            <ValidationMessage For="() => Model.Name" />
+        </div>
+        <div class="col-6 col-md-3">
+            <label class="form-label" for="rf-grade">Grade (0-10)</label>
+            <InputNumber id="rf-grade" class="form-control" @bind-Value="Model.Grade" />
+            <ValidationMessage For="() => Model.Grade" />
+        </div>
+        <div class="col-6 col-md-3">
+            <label class="form-label" for="rf-wall">Wall type</label>
+            <InputSelect id="rf-wall" class="form-select" @bind-Value="Model.WallType">
+                @foreach (var w in Enum.GetValues<WallType>())
+                {
+                    <option value="@w">@w</option>
+                }
+            </InputSelect>
+        </div>
+        <div class="col-12">
+            <label class="form-label" for="rf-desc">Description</label>
+            <InputTextArea id="rf-desc" class="form-control" rows="2" @bind-Value="Model.Description" />
+            <ValidationMessage For="() => Model.Description" />
+        </div>
+        <div class="col-12">
+            <label class="form-label" for="rf-img">Image URL (optional)</label>
+            <InputText id="rf-img" class="form-control" @bind-Value="Model.ImageUrl" />
+            <ValidationMessage For="() => Model.ImageUrl" />
+        </div>
+    </div>
+
+    <div class="mt-3 d-flex gap-2">
+        <button type="submit" class="btn btn-primary" disabled="@Busy">@SubmitText</button>
+        <button type="button" class="btn btn-outline-secondary" @onclick="() => OnCancel.InvokeAsync()">Cancel</button>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter, EditorRequired] public RouteInput Model { get; set; } = default!;
+    [Parameter] public string SubmitText { get; set; } = "Save";
+    [Parameter] public bool Busy { get; set; }
+    [Parameter] public EventCallback<RouteInput> OnSubmit { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+}

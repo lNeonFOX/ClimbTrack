@@ -1,0 +1,18 @@
+<div class="grade-chart" role="img" aria-label="Completed routes per grade">
+    @for (var g = Grades.Min; g <= Grades.Max; g++)
+    {
+        var count = Data.TryGetValue(g, out var c) ? c : 0;
+        var pct = MaxValue == 0 ? 0 : count * 100 / MaxValue;
+        <div class="chart-col">
+            <span class="chart-count">@count</span>
+            <div class="chart-bar-wrap"><div class="chart-bar" style="height:@(pct)%"></div></div>
+            <span class="chart-label">@Grades.Label(g)</span>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyDictionary<int, int> Data { get; set; } = new Dictionary<int, int>();
+
+    private int MaxValue => Data.Count == 0 ? 0 : Data.Values.Max();
+}

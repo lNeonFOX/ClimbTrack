@@ -1,0 +1,15 @@
+<span class="grade-badge @TierClass" title="Grade @Label">@Label</span>
+
+@code {
+    [Parameter, EditorRequired] public int Grade { get; set; }
+
+    private string Label => Grades.Label(Grade);
+
+    private string TierClass => Grade switch
+    {
+        <= 2 => "tier-1",
+        <= 5 => "tier-2",
+        <= 8 => "tier-3",
+        _ => "tier-4"
+    };
+}

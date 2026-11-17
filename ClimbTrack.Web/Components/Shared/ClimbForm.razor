@@ -1,0 +1,53 @@
+<EditForm Model="Model" OnValidSubmit="() => OnSubmit.InvokeAsync(Model)">
+    <DataAnnotationsValidator />
+    <ValidationSummary class="text-danger" />
+
+    <div class="row g-3">
+        <div class="col-12 col-md-6">
+            <label class="form-label" for="climb-route">Route</label>
+            <InputSelect id="climb-route" class="form-select" @bind-Value="Model.RouteId">
+                <option value="0">Select a route...</option>
+                @foreach (var r in Routes)
+                {
+                    <option value="@r.Id">@r.Name (@Grades.Label(r.Grade))</option>
+                }
+            </InputSelect>
+            <ValidationMessage For="() => Model.RouteId" />
+        </div>
+        <div class="col-6 col-md-3">
+            <label class="form-label" for="climb-date">Date</label>
+            <InputDate id="climb-date" class="form-control" @bind-Value="Model.Date" />
+            <ValidationMessage For="() => Model.Date" />
+        </div>
+        <div class="col-6 col-md-3">
+            <label class="form-label" for="climb-attempts">Attempts</label>
+            <InputNumber id="climb-attempts" class="form-control" @bind-Value="Model.Attempts" min="1" max="100" />
+            <ValidationMessage For="() => Model.Attempts" />
+        </div>
+        <div class="col-12">
+            <div class="form-check">
+                <InputCheckbox id="climb-done" class="form-check-input" @bind-Value="Model.IsCompleted" />
+                <label class="form-check-label" for="climb-done">I completed (sent) this route</label>
+            </div>
+        </div>
+        <div class="col-12">
+            <label class="form-label" for="climb-notes">Notes (optional)</label>
+            <InputTextArea id="climb-notes" class="form-control" rows="2" @bind-Value="Model.Notes" />
+            <ValidationMessage For="() => Model.Notes" />
+        </div>
+    </div>
+
+    <div class="mt-3 d-flex gap-2">
+        <button type="submit" class="btn btn-primary" disabled="@Busy">@SubmitText</button>
+        <button type="button" class="btn btn-outline-secondary" @onclick="() => OnCancel.InvokeAsync()">Cancel</button>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter, EditorRequired] public ClimbInput Model { get; set; } = default!;
+    [Parameter, EditorRequired] public IReadOnlyList<ClimbingRoute> Routes { get; set; } = [];
+    [Parameter] public string SubmitText { get; set; } = "Save";
+    [Parameter] public bool Busy { get; set; }
+    [Parameter] public EventCallback<ClimbInput> OnSubmit { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+}

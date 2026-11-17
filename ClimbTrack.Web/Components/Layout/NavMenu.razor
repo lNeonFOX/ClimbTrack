@@ -1,0 +1,32 @@
+<header class="app-nav">
+    <div class="container nav-inner">
+        <a class="brand" href="/">ClimbTrack</a>
+
+        <input type="checkbox" id="nav-toggle" class="nav-toggle" aria-label="Toggle navigation menu" />
+        <label for="nav-toggle" class="nav-burger">Menu</label>
+
+        <nav class="nav-links" aria-label="Main">
+            <NavLink class="nav-item-link" href="routes">Routes</NavLink>
+            <AuthorizeView>
+                <Authorized>
+                    <NavLink class="nav-item-link" href="journal">Journal</NavLink>
+                    <NavLink class="nav-item-link" href="dashboard">Dashboard</NavLink>
+                    <NavLink class="nav-item-link" href="recommendations">Recommended</NavLink>
+                    <NavLink class="nav-item-link" href="profile">Profile</NavLink>
+                    <AuthorizeView Roles="Admin" Context="adminContext">
+                        <NavLink class="nav-item-link" href="admin/routes">Admin</NavLink>
+                    </AuthorizeView>
+                    <form class="nav-logout" action="/account/logout" method="post">
+                        <AntiforgeryToken />
+                        <input type="hidden" name="returnUrl" value="/" />
+                        <button type="submit" class="btn btn-sm btn-outline-light">Sign out</button>
+                    </form>
+                </Authorized>
+                <NotAuthorized>
+                    <NavLink class="nav-item-link" href="Account/Login">Sign in</NavLink>
+                    <a class="btn btn-sm btn-accent" href="Account/Register">Register</a>
+                </NotAuthorized>
+            </AuthorizeView>
+        </nav>
+    </div>
+</header>

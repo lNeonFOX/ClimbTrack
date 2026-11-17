@@ -1,0 +1,61 @@
+@page "/profile"
+@using Microsoft.AspNetCore.Identity
+@attribute [Authorize]
+@inject UserManager<ApplicationUser> UserManager
+@inject ICurrentUserService CurrentUser
+@inject ILogger<Profile> Logger
+
+<PageTitle>Profile - ClimbTrack</PageTitle>
+<h1>Your profile</h1>
+
+@if (_message is not null) { <div class="alert alert-success" role="status">@_message</div> }
+@if (_error is not null) { <div class="alert alert-danger" role="alert">@_error</div> }
+
+@if (_user is not null)
+{
+    <p class="text-muted">Signed in as @_user.Email</p>
+    <div class="card card-body" style="max-width:28rem">
+        <label class="form-label" for="pref-grade">Starting grade for recommendations</label>
+        <select id="pref-grade" class="form-select mb-2" @bind="_grade">
+            @for (var g = Grades.Min; g <= Grades.Max; g++)
+            {
+                <option value="@g">@Grades.Label(g)</option>
+            }
+        </select>
+        <div class="form-text mb-3">Only used until you have completed your first route.</div>
+        <button type="button" class="btn btn-primary" @onclick="SaveAsync">Save</button>
+    </div>
+}
+
+@code {
+    private ApplicationUser? _user;
+    private int _grade;
+    private string? _message;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var id = await CurrentUser.GetUserIdAsync();
+        if (id is null) return;
+        _user = await UserManager.FindByIdAsync(id);
+        _grade = _user?.PreferredGrade ?? 0;
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_user is null) return;
+        _message = null; _error = null;
+        try
+        {
+            _user.PreferredGrade = Math.Clamp(_grade, Grades.Min, Grades.Max);
+            var result = await UserManager.UpdateAsync(_user);
+            if (result.Succeeded) _message = "Profile saved.";
+            else _error = string.Join(" ", result.Errors.Select(e => e.Description));
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Profile save failed");
+            _error = "Your profile could not be saved. Please try again.";
+        }
+    }
+}

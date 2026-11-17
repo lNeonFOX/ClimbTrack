@@ -1,0 +1,21 @@
+@page "/"
+
+<PageTitle>ClimbTrack - bouldering progress tracker</PageTitle>
+
+<section class="hero">
+    <h1>Track every climb. See your progress.</h1>
+    <p class="lead">ClimbTrack helps indoor boulderers browse routes, log attempts, follow their grade progression and get a suggested next route.</p>
+    <div class="d-flex flex-wrap gap-2">
+        <a class="btn btn-accent btn-lg" href="routes">Browse routes</a>
+        <AuthorizeView>
+            <Authorized><a class="btn btn-outline-dark btn-lg" href="dashboard">Open dashboard</a></Authorized>
+            <NotAuthorized><a class="btn btn-outline-dark btn-lg" href="Account/Register">Create free account</a></NotAuthorized>
+        </AuthorizeView>
+    </div>
+</section>
+
+<section class="row g-3 mt-2" aria-label="Features">
+    <div class="col-12 col-md-4"><div class="card h-100"><div class="card-body"><h2 class="h5">Route catalog</h2><p class="mb-0">V0-V10 problems with filters by grade, wall type and name.</p></div></div></div>
+    <div class="col-12 col-md-4"><div class="card h-100"><div class="card-body"><h2 class="h5">Climbing journal</h2><p class="mb-0">Record attempts and sends, edit or delete entries, all private to you.</p></div></div></div>
+    <div class="col-12 col-md-4"><div class="card h-100"><div class="card-body"><h2 class="h5">Smart suggestions</h2><p class="mb-0">Rule-based recommendations at your current or next grade.</p></div></div></div>
+</section>

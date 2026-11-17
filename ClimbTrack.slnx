@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="ClimbTrack.Web/ClimbTrack.Web.csproj" />
+  <Project Path="ClimbTrack.Tests/ClimbTrack.Tests.csproj" />
+</Solution>

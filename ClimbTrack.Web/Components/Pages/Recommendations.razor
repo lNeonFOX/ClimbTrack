@@ -1,0 +1,62 @@
+@page "/recommendations"
+@attribute [Authorize]
+@inject ICurrentUserService CurrentUser
+@inject RecommendationService Recommender
+@inject ILogger<Recommendations> Logger
+
+<PageTitle>Recommended routes - ClimbTrack</PageTitle>
+<h1>Recommended routes</h1>
+
+@if (_loading)
+{
+    <div class="text-center py-5" role="status">Finding routes...</div>
+}
+else if (_error is not null)
+{
+    <div class="alert alert-danger" role="alert">@_error</div>
+}
+else if (_result is not null)
+{
+    <p>
+        Your current level is <GradeBadge Grade="_result.Level" />. These routes are at that grade or one grade higher and
+        you have not completed them yet. They are suggestions, not an assessment of safety or readiness.
+    </p>
+
+    @if (_result.Routes.Count == 0)
+    {
+        <div class="alert alert-info">No uncompleted routes at your level. Ask an admin to add more routes, or try the <a href="routes">catalog</a>.</div>
+    }
+    else
+    {
+        <div class="row g-3">
+            @foreach (var r in _result.Routes)
+            {
+                <div class="col-12 col-sm-6 col-lg-4" @key="r.Id"><RouteCard Route="r" ShowActions="true" /></div>
+            }
+        </div>
+    }
+}
+
+@code {
+    private RecommendationResult? _result;
+    private bool _loading = true;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var userId = await CurrentUser.GetUserIdAsync();
+            if (userId is not null) _result = await Recommender.GetAsync(userId);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Recommendations failed to load");
+            _error = "Recommendations could not be loaded. Please try again.";
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+}

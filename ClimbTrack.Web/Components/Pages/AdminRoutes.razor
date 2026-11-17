@@ -1,0 +1,132 @@
+@page "/admin/routes"
+@attribute [Authorize(Roles = "Admin")]
+@inject RouteService RouteSvc
+@inject ILogger<AdminRoutes> Logger
+
+<PageTitle>Manage routes - ClimbTrack</PageTitle>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h1 class="mb-0">Manage routes</h1>
+    @if (_form is null)
+    {
+        <button type="button" class="btn btn-primary" @onclick="StartAdd">Add route</button>
+    }
+</div>
+
+@if (_message is not null) { <div class="alert alert-success" role="status">@_message</div> }
+@if (_error is not null) { <div class="alert alert-danger" role="alert">@_error</div> }
+
+@if (_form is not null)
+{
+    <div class="card card-body mb-4">
+        <h2 class="h5">@(_editId is null ? "New route" : "Edit route")</h2>
+        <RouteForm Model="_form" Busy="_busy" SubmitText="@(_editId is null ? "Create route" : "Update route")"
+                   OnSubmit="SaveAsync" OnCancel="CancelForm" />
+    </div>
+}
+
+@if (_page is not null)
+{
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead><tr><th>Name</th><th>Grade</th><th>Wall</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var r in _page.Items)
+                {
+                    <tr @key="r.Id">
+                        <td>@r.Name</td>
+                        <td><GradeBadge Grade="r.Grade" /></td>
+                        <td>@r.WallType</td>
+                        <td class="text-end text-nowrap">
+                            @if (_confirmDeleteId == r.Id)
+                            {
+                                <span class="me-2">Delete?</span>
+                                <button type="button" class="btn btn-sm btn-danger" @onclick="() => DeleteAsync(r.Id)">Yes</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="() => _confirmDeleteId = null">No</button>
+                            }
+                            else
+                            {
+                                <button type="button" class="btn btn-sm btn-outline-primary" @onclick="() => StartEdit(r)">Edit</button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => _confirmDeleteId = r.Id">Delete</button>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <Pager Page="_page.Page" TotalPages="_page.TotalPages" PageChanged="GoToPage" />
+}
+
+@code {
+    private PagedResult<ClimbingRoute>? _page;
+    private int _pageNo = 1;
+    private RouteInput? _form;
+    private int? _editId;
+    private int? _confirmDeleteId;
+    private string? _message;
+    private string? _error;
+    private bool _busy;
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            _page = await RouteSvc.SearchAsync(new RouteQuery(null, null, null, _pageNo, 15));
+            if (_page.Items.Count == 0 && _pageNo > 1)
+            {
+                _pageNo--;
+                _page = await RouteSvc.SearchAsync(new RouteQuery(null, null, null, _pageNo, 15));
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Admin route list failed to load");
+            _error = "Routes could not be loaded.";
+        }
+    }
+
+    private async Task GoToPage(int page) { _pageNo = page; await LoadAsync(); }
+
+    private void StartAdd() { _editId = null; _message = null; _error = null; _form = new RouteInput(); }
+
+    private void StartEdit(ClimbingRoute r)
+    {
+        _editId = r.Id; _message = null; _error = null;
+        _form = new RouteInput { Name = r.Name, Grade = r.Grade, WallType = r.WallType, Description = r.Description, ImageUrl = r.ImageUrl };
+    }
+
+    private void CancelForm() { _form = null; _editId = null; _error = null; }
+
+    private async Task SaveAsync(RouteInput input)
+    {
+        _busy = true; _error = null;
+        try
+        {
+            var result = _editId is null ? await RouteSvc.CreateAsync(input) : await RouteSvc.UpdateAsync(_editId.Value, input);
+            if (result.Success)
+            {
+                _message = _editId is null ? "Route created." : "Route updated.";
+                _form = null; _editId = null;
+                await LoadAsync();
+            }
+            else _error = result.Error;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Saving route failed");
+            _error = "Something went wrong while saving. Please try again.";
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task DeleteAsync(int id)
+    {
+        _confirmDeleteId = null;
+        var result = await RouteSvc.DeleteAsync(id);
+        if (result.Success) { _message = "Route deleted."; _error = null; await LoadAsync(); }
+        else _error = result.Error;
+    }
+}

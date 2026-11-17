@@ -1,0 +1,31 @@
+@inherits LayoutComponentBase
+
+<NavMenu />
+
+<main id="main-content" class="container py-4">
+    <ErrorBoundary @ref="_boundary">
+        <ChildContent>@Body</ChildContent>
+        <ErrorContent>
+            <div class="alert alert-danger" role="alert">
+                Something went wrong while showing this page. Please reload or go back to the <a href="/">home page</a>.
+            </div>
+        </ErrorContent>
+    </ErrorBoundary>
+</main>
+
+<footer class="app-footer">
+    <div class="container">ClimbTrack - bouldering progress tracker. Recommendations are suggestions, not safety or readiness assessments.</div>
+</footer>
+
+<div id="blazor-error-ui" data-nosnippet>
+    An unhandled error has occurred.
+    <a href="." class="reload">Reload</a>
+    <span class="dismiss" role="button" aria-label="Dismiss">x</span>
+</div>
+
+@code {
+    private ErrorBoundary? _boundary;
+
+    // Reset a faulted boundary whenever the body changes (i.e. on navigation).
+    protected override void OnParametersSet() => _boundary?.Recover();
+}
