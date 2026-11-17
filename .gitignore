@@ -8,3 +8,6 @@ obj/
 *.user
 TestResults/
 coverage/
+
+# Claude outputs
+Claude outputs/
